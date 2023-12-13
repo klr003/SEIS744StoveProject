@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 #include <ChainableLED.h>
-#include "TM1637.h"
+// #include "TM1637.h"
 
 
 /* Constant variables ------------------------------------------------------- */
@@ -23,7 +23,8 @@
 
 #define DWORD_ALIGN_PTR(a)   ((a & 0x3) ?(((uintptr_t)a + 0x4) & ~(uintptr_t)0x3) : a)
 
-// ChainableLED leds(A6, A7, 1);
+ChainableLED leds(A6, A7, 1);
+// TM1637 tm1637(A6, A7);
 
 
 /*
@@ -124,40 +125,36 @@ void resizeImage(int srcWidth, int srcHeight, uint8_t *srcImage, int dstWidth, i
 void cropImage(int srcWidth, int srcHeight, uint8_t *srcImage, int startX, int startY, int dstWidth, int dstHeight, uint8_t *dstImage, int iBpp);
 
 
-
-
 RunningAverage RAT(10);
 int samples = 0;
 
 bool potExists = false;
-bool testClassification[100] = {0};
+// bool testClassification[100] = {0};
 
 
 void setup() {
-  // put your setup code here, to run once:
-
-  // Serial.begin(9600);
   Serial.begin(115200);
 
-  for(int i=0; i<100; i++) {
-    if(i<20) {
-      testClassification[i] = false;
-    } else if (i<40) {
-      testClassification[i] = true;
-    } else {
-      testClassification[i] = false;
-    }
+  //mocking classification
+  // for(int i=0; i<100; i++) {
+  //   if(i<20) {
+  //     testClassification[i] = false;
+  //   } else if (i<40) {
+  //     testClassification[i] = true;
+  //   } else {
+  //     testClassification[i] = false;
+  //   }
     
-  }
+  // }
 
 
   RAT.clear(); 
 
-  // leds.init();
-  tm1637.init();
-  tm1637.set(BRIGHT_TYPICAL);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
+  leds.init();
+  // tm1637.init();
+  // tm1637.set(BRIGHT_TYPICAL);//BRIGHT_TYPICAL = 2,BRIGHT_DARKEST = 0,BRIGHTEST = 7;
 
-  tm1637.displayNum(15)
+  // tm1637.displayNum(15)
 
   //TODO: LED off initially
   // leds.setColorRGB(0, 0.0, 255, 0.0); //setting to green initially
@@ -177,51 +174,6 @@ void setup() {
     ei_printf("\tFrame size: %d\n", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE);
     ei_printf("\tNo. of classes: %d\n", sizeof(ei_classifier_inferencing_categories) / sizeof(ei_classifier_inferencing_categories[0]));
 }
-
-// void loop() {
-
-//   Serial.print("potExists: ");
-//   Serial.println(potExists ? "TruE": "False");
-
-//   potExists = true;
-
-//   Serial.print("potExists2: ");
-//   Serial.println(potExists ? "TruE": "False");
-
-//   float temperature = BARO.readTemperature();
-
-//   // Serial.print("Temperature = ");
-//   // Serial.print(temperature);
-//   // Serial.println(" C");
-
-//   //TODO: maybe use https://github.com/RobTillaart/RunningAverage for rolling average temps
-
-//   float pressure = BARO.readPressure();
-
-//   RAT.addValue(temperature);
-
-//     //  print a header every 20 lines
-//   if (samples % 20 == 0) {
-//     Serial.println("\nCNT\tT\tTavg\tDeviation");
-//   }
-//   samples++;
-
-//   Serial.print(samples);
-//   Serial.print('\t');
-//   Serial.print(temperature, 1);
-//   Serial.print('\t');
-//   Serial.print(RAT.getAverage(), 2);
-//   Serial.print('\t');
-
-//   float deviation = temperature-RAT.getAverage();
-//   if(deviation > 2) {
-//     Serial.print(deviation);
-//   }
-//   Serial.println();
-
-//   delay(1000);
-
-// }
 
 #define IS_POT_COUNT 20
 bool isPot[IS_POT_COUNT] = {0};
@@ -245,46 +197,9 @@ int countPots(void) {
 
 void loop()
 {
-  // float temp = BARO.readTemperature();
-  // ei_printf("Temp= (%d)\r\n", temp);
-  // float temperature = (temp * 9/5) + 32;
-  // ei_printf("Converted Temp= (%d)\r\n", temperature);
-  // Serial.print("Temperature = ");
-  // Serial.print(temperature);
-  // Serial.println(" C");
-
-//   //TODO: maybe use https://github.com/RobTillaart/RunningAverage for rolling average temps
-
-  // float pressure = BARO.readPressure();
-
-//   RAT.addValue(temperature);
-
-//     //  print a header every 20 lines
-  // if (samples % 20 == 0) {
-  //   Serial.println("\nCNT\tT\tTavg\tDeviation");
-  // }
-  // samples++;
-
-  // Serial.print(samples);
-  // Serial.print('\t');
-  // Serial.print(temperature, 1);
-  // Serial.print('\t');
-  // Serial.print(RAT.getAverage(), 2);
-  // Serial.print('\t');
-
-//   float deviation = temperature-RAT.getAverage();
-//   if(deviation > 2) {
-//     Serial.print(deviation);
-//   }
-//   Serial.println();
-
-//   delay(1000);
-
-
-
     bool stop_inferencing = false;
 
-    int testClassifierIndex = 0;
+    // int testClassifierIndex = 0;
 
     while(stop_inferencing == false) {
 
@@ -302,10 +217,7 @@ void loop()
 
       ei_printf("%d\t%0.2f\t%0.2f\r\n", samples, temperature, RAT.getAverage());
 
-     //TODO: maybe use https://github.com/RobTillaart/RunningAverage for rolling average temps
-
       float pressure = BARO.readPressure();
-
 
       ei_printf("\nStarting inferencing in 2 seconds...\n");
 
@@ -382,20 +294,20 @@ void loop()
           ei_printf("    %s: %.5f\n", result.classification[ix].label,
                             result.classification[ix].value);
           if (strcmp(result.classification[ix].label, "pot") == 0) {
-            // if(result.classification[ix].value > 0.5) {
-            if(testClassification[testClassifierIndex++]) {
-              ei_printf("I am a pot");
+            if(result.classification[ix].value > 0.8) { //TODO: setting to 0.8 
+            // if(testClassification[testClassifierIndex++]) {
+              ei_printf("I am a pot\n");
               isPot[isPotIndex++] = true;
             } else {
-              ei_printf("I am NOT a pot");
+              ei_printf("I am NOT a pot\n");
               isPot[isPotIndex++] = false;
             }
             if(isPotIndex >= IS_POT_COUNT) {
               isPotIndex = 0;
             }
-            if(testClassifierIndex >= 100) {
-              testClassifierIndex = 0;
-            }
+            // if(testClassifierIndex >= 100) {
+            //   testClassifierIndex = 0;
+            // }
           }
       }
 
@@ -419,8 +331,9 @@ void loop()
           tempCheckCount = 0;
         
       } else if (checkingTemp) { //checking temp to see if it's deviated enough from the average.
+          ei_printf("Checking for temperature drop\n");
           tempCheckCount++;
-          if(temperature > lastPotSeenTemp) { //this may happen when the pot is removed...temp starts rising because empty burner starts to heat up the air above...pot absorbing heat
+          if(temperature > lastPotSeenTemp) { //this happens when the pot is removed...temp shoots up because empty burner starts to heat up the air above...pot absorbing heat
             lastPotSeenTemp = temperature;
           }
           float deviation = lastPotSeenTemp-RAT.getAverage();
@@ -429,8 +342,7 @@ void loop()
           if(tempCheckCount > 30) { 
             ei_printf("lastPotSeenTemp: %f\n", lastPotSeenTemp);
             ei_printf("deviation: %f\n", deviation);
-              // if(deviation < 5) {
-              if(deviation < 5) {
+              if(deviation < 5) {  //TODO: maybe lower this to 3
                 //alert, set to red
                 leds.setColorRGB(0, 255, 0.0, 0.0);
               }
